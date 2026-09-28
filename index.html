@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>議会中継・動画音声ブースター | 自治体配信視聴支援システム</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            gov: {
+              50: '#f0f5fa',
+              100: '#e1ecf5',
+              200: '#c3d9eb',
+              500: '#1d63a8',
+              600: '#154e88',
+              700: '#0e3863',
+              800: '#08233f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* スライダーのスタイリング */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #cbd5e1;
+      border-radius: 9999px;
+      height: 8px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #1d63a8;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: background 0.15s ease-in-out;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      background: #154e88;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- ヘッダー -->
+  <header class="bg-gov-700 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gov-500 flex items-center justify-center text-white font-bold shadow-inner">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">自治体議会中継・動画音声ブースター</h1>
+          <p class="text-xs sm:text-sm text-gov-100 opacity-90">Web Audio API 音声明瞭化・音量増幅支援ツール</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gov-800/80 text-emerald-300 border border-emerald-500/30">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          ブラウザ処理（外部送信なし・安全）
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+    <!-- 使い方ステップガイド -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <div class="flex items-center gap-2 text-gov-700 font-bold mb-3">
+        <svg class="w-5 h-5 text-gov-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>音声ブースト機能のご利用手順</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+        <div class="flex items-start gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-100">
+          <div class="w-6 h-6 rounded-full bg-gov-600 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+          <div>
+            <div class="font-semibold text-slate-700">URLを入力して動画を読込</div>
+            <p class="text-xs text-slate-500 mt-1">視聴したいYouTube中継・録画のURLを入力し、「動画を読込」を押下します。</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-100">
+          <div class="w-6 h-6 rounded-full bg-gov-600 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+          <div>
+            <div class="font-semibold text-slate-700">音声キャプチャを開始</div>
+            <p class="text-xs text-slate-500 mt-1">「タブ音声共有を開始」を押し、ポップアップで<strong>「このタブ」</strong>と<strong>「音声を共有」</strong>を選択します。</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-100">
+          <div class="w-6 h-6 rounded-full bg-gov-600 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+          <div>
+            <div class="font-semibold text-slate-700">音量を100%〜500%に調整</div>
+            <p class="text-xs text-slate-500 mt-1">スライダーでお好みの音量まで増幅します。音割れ防止機能でクリアに補正されます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 左側：YouTubeプレイヤー領域 -->
+      <section class="lg:col-span-7 flex flex-col gap-4">
+        <!-- URL入力フォーム -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <label for="videoUrlInput" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+            視聴対象 YouTube URL または 動画ID
+          </label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input 
+              id="videoUrlInput" 
+              type="text" 
+              placeholder="例: https://www.youtube.com/watch?v=... または 動画ID" 
+              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-gov-500 focus:border-gov-500 transition-all"
+              value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            >
+            <button 
+              id="loadVideoBtn" 
+              type="button" 
+              class="shrink-0 px-5 py-2.5 bg-gov-600 hover:bg-gov-700 active:bg-gov-800 text-white font-medium text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              動画を読込
+            </button>
+          </div>
+        </div>
+
+        <!-- プレイヤー埋め込みコンテナ -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div class="aspect-video w-full bg-slate-900 relative">
+            <div id="player" class="w-full h-full"></div>
+            <!-- ロード時プレースホルダー -->
+            <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-900 p-4 text-center pointer-events-none hidden">
+              <svg class="w-12 h-12 mb-2 text-slate-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <p class="text-sm">動画プレイヤーを初期化中...</p>
+            </div>
+          </div>
+          <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span id="playerStateText" class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+              待機中
+            </span>
+            <span class="text-slate-400">公式 YouTube IFrame API 連係</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側：音声ブースター操作パネル -->
+      <section class="lg:col-span-5 flex flex-col gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-full justify-between">
+          <div class="space-y-6">
+            <!-- パネル見出し -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-gov-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path>
+                  </svg>
+                  音量ブースト制御装置
+                </h2>
+                <p class="text-xs text-slate-500">ブラウザ内 Web Audio API リアルタイム処理</p>
+              </div>
+              <span id="boostBadge" class="text-xs px-2.5 py-1 rounded-md font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                停止中
+              </span>
+            </div>
+
+            <!-- キャプチャ開始・停止ボタン -->
+            <div class="space-y-2">
+              <button 
+                id="toggleCaptureBtn" 
+                type="button" 
+                class="w-full py-3.5 px-4 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm bg-gov-600 hover:bg-gov-700 active:bg-gov-800 text-white"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                </svg>
+                <span>タブ音声共有を開始（ブースト有効化）</span>
+              </button>
+              <div id="captureHint" class="bg-amber-50 border border-amber-200/80 rounded-lg p-3 text-xs text-amber-900 leading-relaxed hidden">
+                <span class="font-bold">【重要】共有ダイアログの指定方法：</span><br>
+                1. 共有元として<strong>「このタブ（議会中継・動画音声ブースター）」</strong>を選択<br>
+                2. 画面下部の<strong>「音声を共有する」チェックがON</strong>になっていることを確認して「共有」をクリックしてください。
+              </div>
+            </div>
+
+            <!-- 音量倍率スライダー -->
+            <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex justify-between items-center">
+                <label for="gainSlider" class="text-sm font-semibold text-slate-700">音量増幅倍率</label>
+                <div class="flex items-baseline gap-1">
+                  <span id="gainValueText" class="text-2xl font-extrabold text-gov-600">200</span>
+                  <span class="text-xs font-bold text-slate-500">%</span>
+                  <span id="gainDbText" class="text-xs text-slate-400 ml-1">(+6.0 dB)</span>
+                </div>
+              </div>
+              <input 
+                id="gainSlider" 
+                type="range" 
+                min="100" 
+                max="500" 
+                step="5" 
+                value="200" 
+                class="w-full cursor-pointer"
+              >
+              <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                <span>100% (標準)</span>
+                <span>200%</span>
+                <span>300%</span>
+                <span>400%</span>
+                <span>500% (最大)</span>
+              </div>
+            </div>
+
+            <!-- 音声レベルメーター -->
+            <div class="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex justify-between text-xs font-semibold text-slate-600">
+                <span>出力オーディオレベル</span>
+                <span id="meterDbLabel" class="text-[11px] text-slate-400">-∞ dB</span>
+              </div>
+              <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden flex p-0.5">
+                <div id="meterBar" class="h-full bg-emerald-500 rounded-full transition-all duration-75" style="width: 0%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-400 px-0.5">
+                <span>-60dB</span>
+                <span>-20dB</span>
+                <span>-6dB</span>
+                <span class="text-amber-600">0dB</span>
+              </div>
+            </div>
+
+            <!-- 音声明瞭化 & リミッター設定 -->
+            <div class="space-y-3 pt-2">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">音声補正フィルター</h3>
+              
+              <!-- 音割れ防止リミッター (コンプレッサー) -->
+              <label class="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                <div class="pr-2">
+                  <div class="text-sm font-medium text-slate-800">音割れ防止リミッター</div>
+                  <div class="text-xs text-slate-500">大声や咳払い時の歪み・不快な音割れを自動抑制</div>
+                </div>
+                <input id="compressorToggle" type="checkbox" checked class="w-5 h-5 rounded text-gov-600 focus:ring-gov-500 border-slate-300">
+              </label>
+
+              <!-- 人の声フォーカス (ローカット/ハイパス) -->
+              <label class="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                <div class="pr-2">
+                  <div class="text-sm font-medium text-slate-800">人の声フォーカス（空調ノイズ低減）</div>
+                  <div class="text-xs text-slate-500">120Hz以下の低周波ハムノイズを遮断し、発言を聞きやすく補正</div>
+                </div>
+                <input id="filterToggle" type="checkbox" checked class="w-5 h-5 rounded text-gov-600 focus:ring-gov-500 border-slate-300">
+              </label>
+            </div>
+          </div>
+
+          <!-- 注意書き -->
+          <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400 leading-relaxed">
+            ※ 大音量での連続聴取は耳へ負担を与える可能性があります。適正な音量（200〜300%程度）を目安にご調整ください。
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 技術補足・自治体向け推奨設定ガイド -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+        <svg class="w-5 h-5 text-gov-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+        </svg>
+        本ツールの動作原理および根本解決に向けた補足事項
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600 leading-relaxed">
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/60">
+          <span class="font-bold text-slate-700 block mb-1">【視聴者側】なぜ画面・タブ共有を用いるのか</span>
+          ブラウザのセキュリティ仕様（クロスオリジン制限/CORS）により、iframe内のYouTubeプレイヤー音声に直接JavaScriptを接続することは制限されています。本ツールでは、ブラウザ標準のタブ共有機能経由で音声ストリームを取得し、安全かつ高音質にWeb Audio APIパイプラインへルーティングしています。
+        </div>
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/60">
+          <span class="font-bold text-slate-700 block mb-1">【配信者側】根本改善（議会事務局・広報担当者様向け）</span>
+          視聴者側の増幅は便利ですが、エアコン等の暗騒音も持ち上がります。配信側（OBS Studio等）のマイク音声入力に対し、あらかじめ「ゲイン（+6dB〜+12dB）」、「コンプレッサー」、「リミッター」フィルターを適用することで、全市民にとって明瞭な中継環境が実現します。
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-slate-200 text-slate-500 text-xs py-4 text-center mt-auto border-t border-slate-300">
+    <div class="max-w-6xl mx-auto px-4">
+      自治体議会中継 視聴品質改善プロジェクト &copy; 2026
+    </div>
+  </footer>
+
+  <!-- YouTube IFrame API スクリプト読み込み -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    /**
+     * 自治体議会中継・音声ブースター制御スクリプト
+     * - YouTube IFrame API 操作
+     * - Web Audio API (getDisplayMedia -> BiquadFilter -> DynamicsCompressor -> GainNode -> Destination)
+     * - 音量メーターのリアルタイム描画
+     */
+
+    // --- DOM要素取得 ---
+    const videoUrlInput = document.getElementById('videoUrlInput');
+    const loadVideoBtn = document.getElementById('loadVideoBtn');
+    const playerStateText = document.getElementById('playerStateText');
+    const toggleCaptureBtn = document.getElementById('toggleCaptureBtn');
+    const captureHint = document.getElementById('captureHint');
+    const boostBadge = document.getElementById('boostBadge');
+    const gainSlider = document.getElementById('gainSlider');
+    const gainValueText = document.getElementById('gainValueText');
+    const gainDbText = document.getElementById('gainDbText');
+    const meterBar = document.getElementById('meterBar');
+    const meterDbLabel = document.getElementById('meterDbLabel');
+    const compressorToggle = document.getElementById('compressorToggle');
+    const filterToggle = document.getElementById('filterToggle');
+
+    // --- YouTube API 関連変数 ---
+    let ytPlayer = null;
+    let ytApiReady = false;
+
+    // --- Web Audio API 関連変数 ---
+    let audioCtx = null;
+    let mediaStream = null;
+    let sourceNode = null;
+    let gainNode = null;
+    let compressorNode = null;
+    let speechFilterNode = null;
+    let bypassCompressorNode = null;
+    let bypassFilterNode = null;
+    let analyserNode = null;
+    let isCapturing = false;
+    let animationFrameId = null;
+
+    // YouTube API準備完了コールバック
+    window.onYouTubeIframeAPIReady = function() {
+      ytApiReady = true;
+      initPlayer('dQw4w9WgXcQ'); // デフォルト初期動画
+    };
+
+    function initPlayer(videoId) {
+      if (!ytApiReady) return;
+      try {
+        ytPlayer = new YT.Player('player', {
+          height: '100%',
+          width: '100%',
+          videoId: videoId,
+          playerVars: {
+            'playsinline': 1,
+            'rel': 0,
+            'modestbranding': 1
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      } catch (err) {
+        console.error('YouTube Playerの生成に失敗しました:', err);
+      }
+    }
+
+    function onPlayerReady(event) {
+      updatePlayerStatus('準備完了');
+    }
+
+    function onPlayerStateChange(event) {
+      switch (event.data) {
+        case YT.PlayerState.PLAYING:
+          updatePlayerStatus('再生中', 'bg-emerald-500');
+          break;
+        case YT.PlayerState.PAUSED:
+          updatePlayerStatus('一時停止', 'bg-amber-500');
+          break;
+        case YT.PlayerState.BUFFERING:
+          updatePlayerStatus('読込中...', 'bg-blue-500');
+          break;
+        case YT.PlayerState.ENDED:
+          updatePlayerStatus('終了', 'bg-slate-400');
+          break;
+        default:
+          updatePlayerStatus('待機中', 'bg-slate-400');
+      }
+    }
+
+    function updatePlayerStatus(text, dotColorClass = 'bg-slate-400') {
+      playerStateText.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${dotColorClass}"></span>
+        ${text}
+      `;
+    }
+
+    // YouTube URLから動画IDを抽出する正規表現ヘルパー
+    function extractVideoId(url) {
+      if (!url) return null;
+      const trimmed = url.trim();
+      if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+        return trimmed;
+      }
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = trimmed.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    // 動画読み込みボタンイベント
+    loadVideoBtn.addEventListener('click', () => {
+      const url = videoUrlInput.value;
+      const videoId = extractVideoId(url);
+      if (!videoId) {
+        alert('有効なYouTubeの動画URLまたは動画ID（11文字）を入力してください。');
+        return;
+      }
+      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+        ytPlayer.loadVideoById(videoId);
+      } else {
+        initPlayer(videoId);
+      }
+    });
+
+    // 音量ゲイン（倍率）の計算とUI更新
+    function updateGain(percentage) {
+      const multiplier = percentage / 100;
+      gainValueText.textContent = percentage;
+      
+      // デシベル変換 (+dB)
+      const db = 20 * Math.log10(multiplier);
+      gainDbText.textContent = `(+${db.toFixed(1)} dB)`;
+
+      if (gainNode && audioCtx) {
+        // 急激な音量変化によるポップノイズを防ぐためランプ処理
+        gainNode.gain.setTargetAtTime(multiplier, audioCtx.currentTime, 0.05);
+      }
+    }
+
+    gainSlider.addEventListener('input', (e) => {
+      updateGain(e.target.value);
+    });
+
+    // フィルターノードの切り替え適用
+    function applyAudioChainSettings() {
+      if (!audioCtx || !sourceNode) return;
+
+      const isCompressorOn = compressorToggle.checked;
+      const isFilterOn = filterToggle.checked;
+
+      // 切断して再接続
+      sourceNode.disconnect();
+      speechFilterNode.disconnect();
+      compressorNode.disconnect();
+      gainNode.disconnect();
+      analyserNode.disconnect();
+
+      // パイプラインの動的構築:
+      // Source -> [Filter?] -> [Compressor?] -> Gain -> Analyser -> Destination
+      let currentNode = sourceNode;
+
+      if (isFilterOn) {
+        currentNode.connect(speechFilterNode);
+        currentNode = speechFilterNode;
+      }
+
+      if (isCompressorOn) {
+        currentNode.connect(compressorNode);
+        currentNode = compressorNode;
+      }
+
+      currentNode.connect(gainNode);
+      gainNode.connect(analyserNode);
+      analyserNode.connect(audioCtx.destination);
+    }
+
+    compressorToggle.addEventListener('change', applyAudioChainSettings);
+    filterToggle.addEventListener('change', applyAudioChainSettings);
+
+    // キャプチャの開始/停止トグル
+    toggleCaptureBtn.addEventListener('click', async () => {
+      if (isCapturing) {
+        stopAudioCapture();
+      } else {
+        await startAudioCapture();
+      }
+    });
+
+    async function startAudioCapture() {
+      captureHint.classList.remove('hidden');
+
+      try {
+        // getDisplayMedia でタブ音声を要求
+        // video: true は一部ブラウザの要件（音声のみの取得は仕様上videoを含む必要がある）
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: {
+            suppressLocalAudioPlayback: false, // ハウリング抑制
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
+        });
+
+        const audioTracks = mediaStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+          // 音声共有チェックが外れていた場合
+          stopAudioCapture();
+          alert('音声トラックが検出されませんでした。\n共有時に「音声を共有する」にチェックを入れてください。');
+          return;
+        }
+
+        // 映像トラックは不要なため即時停止して負荷を削減
+        mediaStream.getVideoTracks().forEach(track => track.stop());
+
+        // ユーザーがブラウザ標準の「共有を停止」ボタンを押したときの処理
+        audioTracks[0].addEventListener('ended', () => {
+          stopAudioCapture();
+        });
+
+        // Web Audio Context 初期化
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+
+        // ノード構築
+        sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+
+        // 1. 人の声フォーカス用ハイパスフィルター (120Hz以下カット)
+        speechFilterNode = audioCtx.createBiquadFilter();
+        speechFilterNode.type = 'highpass';
+        speechFilterNode.frequency.value = 120;
+        speechFilterNode.Q.value = 0.7;
+
+        // 2. 音割れ防止リミッター・コンプレッサー
+        compressorNode = audioCtx.createDynamicsCompressor();
+        compressorNode.threshold.setValueAtTime(-18, audioCtx.currentTime); // -18dBを超えると圧縮
+        compressorNode.knee.setValueAtTime(6, audioCtx.currentTime);
+        compressorNode.ratio.setValueAtTime(12, audioCtx.currentTime); // 高比率でリミッターとして機能
+        compressorNode.attack.setValueAtTime(0.003, audioCtx.currentTime); // 素早いアタック
+        compressorNode.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+        // 3. 増幅用ゲインノード
+        gainNode = audioCtx.createGain();
+        updateGain(gainSlider.value);
+
+        // 4. 音声解析用アナライザーノード（レベルメーター用）
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 256;
+        analyserNode.smoothingTimeConstant = 0.8;
+
+        // パイプライン接続
+        applyAudioChainSettings();
+
+        // 状態更新
+        isCapturing = true;
+        updateUIState(true);
+        startVisualizer();
+
+      } catch (err) {
+        console.error('音声キャプチャ開始エラー:', err);
+        stopAudioCapture();
+        if (err.name !== 'NotAllowedError') {
+          alert('音声キャプチャの初期化中にエラーが発生しました: ' + err.message);
+        }
+      }
+    }
+
+    function stopAudioCapture() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      if (audioCtx && audioCtx.state !== 'closed') {
+        audioCtx.close();
+        audioCtx = null;
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+
+      isCapturing = false;
+      updateUIState(false);
+      resetVisualizer();
+    }
+
+    function updateUIState(capturing) {
+      if (capturing) {
+        toggleCaptureBtn.classList.remove('bg-gov-600', 'hover:bg-gov-700', 'active:bg-gov-800');
+        toggleCaptureBtn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'active:bg-rose-800');
+        toggleCaptureBtn.innerHTML = `
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+          </svg>
+          <span>音声ブーストを停止</span>
+        `;
+        boostBadge.textContent = 'ブースト中';
+        boostBadge.classList.remove('bg-slate-100', 'text-slate-500', 'border-slate-200');
+        boostBadge.classList.add('bg-emerald-100', 'text-emerald-700', 'border-emerald-300');
+        captureHint.classList.add('hidden');
+      } else {
+        toggleCaptureBtn.classList.remove('bg-rose-600', 'hover:bg-rose-700', 'active:bg-rose-800');
+        toggleCaptureBtn.classList.add('bg-gov-600', 'hover:bg-gov-700', 'active:bg-gov-800');
+        toggleCaptureBtn.innerHTML = `
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+          </svg>
+          <span>タブ音声共有を開始（ブースト有効化）</span>
+        `;
+        boostBadge.textContent = '停止中';
+        boostBadge.classList.remove('bg-emerald-100', 'text-emerald-700', 'border-emerald-300');
+        boostBadge.classList.add('bg-slate-100', 'text-slate-500', 'border-slate-200');
+      }
+    }
+
+    // リアルタイム・レベルメーターの描画ループ
+    function startVisualizer() {
+      if (!analyserNode) return;
+      const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+      function render() {
+        if (!isCapturing || !analyserNode) return;
+        analyserNode.getByteTimeDomainData(dataArray);
+
+        // RMS（二乗平均平方根）計算
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const val = (dataArray[i] - 128) / 128;
+          sum += val * val;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+
+        // デシベル変換 (基準値 1.0)
+        let db = 20 * Math.log10(rms);
+        if (db < -60) db = -60;
+
+        // メーター幅計算 (-60dB を 0%、0dB を 100% と換算)
+        const percent = Math.min(100, Math.max(0, ((db + 60) / 60) * 100));
+        meterBar.style.width = `${percent}%`;
+
+        // 色分け（クリッピング警告）
+        if (db > -3) {
+          meterBar.classList.remove('bg-emerald-500', 'bg-amber-500');
+          meterBar.classList.add('bg-rose-500');
+        } else if (db > -10) {
+          meterBar.classList.remove('bg-emerald-500', 'bg-rose-500');
+          meterBar.classList.add('bg-amber-500');
+        } else {
+          meterBar.classList.remove('bg-amber-500', 'bg-rose-500');
+          meterBar.classList.add('bg-emerald-500');
+        }
+
+        meterDbLabel.textContent = db <= -59 ? '-∞ dB' : `${db.toFixed(1)} dB`;
+
+        animationFrameId = requestAnimationFrame(render);
+      }
+
+      render();
+    }
+
+    function resetVisualizer() {
+      meterBar.style.width = '0%';
+      meterBar.classList.remove('bg-amber-500', 'bg-rose-500');
+      meterBar.classList.add('bg-emerald-500');
+      meterDbLabel.textContent = '-∞ dB';
+    }
+  </script>
+</body>
+</html>

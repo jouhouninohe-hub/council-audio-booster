@@ -103,7 +103,7 @@
           <div class="w-6 h-6 rounded-full bg-gov-600 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
           <div>
             <div class="font-semibold text-slate-700">音声キャプチャを開始</div>
-            <p class="text-xs text-slate-500 mt-1">「タブ音声共有を開始」を押し、ポップアップで<strong>「このタブ」</strong>と<strong>「音声を共有」</strong>を選択します。</p>
+            <p class="text-xs text-slate-500 mt-1">YouTubeを<strong>別のタブ</strong>で開いて再生しておき、「タブ音声共有を開始」を押して、そのタブを選び<strong>「タブの音声も共有」</strong>にチェックを入れます。</p>
           </div>
         </div>
         <div class="flex items-start gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-100">
@@ -144,7 +144,15 @@
               </svg>
               動画を読込
             </button>
+            <button
+              id="openTabBtn"
+              type="button"
+              class="shrink-0 px-5 py-2.5 bg-white hover:bg-slate-50 text-gov-700 border border-gov-500 font-medium text-sm rounded-lg transition-colors shadow-sm"
+            >
+              別タブで開く
+            </button>
           </div>
+          <p class="text-xs text-slate-500 mt-2">ブーストする動画は「別タブで開く」で再生してください。このページ内のプレイヤーは確認用です（音が重なる場合は一時停止してください）。</p>
         </div>
 
         <!-- プレイヤー埋め込みコンテナ -->
@@ -204,9 +212,9 @@
               </button>
               <div id="captureHint" class="bg-amber-50 border border-amber-200/80 rounded-lg p-3 text-xs text-amber-900 leading-relaxed hidden">
                 <span class="font-bold">【重要】共有ダイアログの指定方法：</span><br>
-                1. 共有元として<strong>「このタブ（議会中継・動画音声ブースター）」</strong>を選択<br>
-                2. 画面下部の<strong>「音声を共有する」チェックがON</strong>になっていることを確認して「共有」をクリックしてください。
-              </div>
+                1. ダイアログ上部の<strong>「Chromeタブ」</strong>（Edgeは「タブ」）を選び、<strong>動画を再生している別のタブ</strong>を選択（このブースターのタブは一覧に出ません）<br>
+                2. 画面下部の<strong>「タブの音声も共有」チェックがON</strong>になっていることを確認して「共有」をクリック<br>
+                3. 共有元のタブの音は自動でミュートされ、このタブからブースト後の音だけが出ます。</div>
             </div>
 
             <!-- 音量倍率スライダー -->
@@ -444,6 +452,17 @@
       }
     });
 
+    // 別タブでYouTubeを開く（このタブの音声は共有対象にできないため）
+    document.getElementById('openTabBtn').addEventListener('click', () => {
+      const videoId = extractVideoId(videoUrlInput.value);
+      if (!videoId) {
+        alert('有効なYouTubeの動画URLまたは動画ID（11文字）を入力してください。');
+        return;
+      }
+      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
+      window.open('https://www.youtube.com/watch?v=' + videoId, '_blank', 'noopener');
+    });
+
     // 音量ゲイン（倍率）の計算とUI更新
     function updateGain(percentage) {
       const multiplier = percentage / 100;
@@ -512,16 +531,30 @@
       captureHint.classList.remove('hidden');
 
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          alert('このブラウザはタブ音声の共有に対応していません。PC版のChromeまたはEdgeをご利用ください。');
+          return;
+        }
+        if (window.self !== window.top) {
+          alert('このページが別のページ内（iframeやプレビュー画面）で開かれているため、タブ共有を利用できません。\nこのページを単独のタブで開き直してください。');
+          return;
+        }
+
         // getDisplayMedia でタブ音声を要求
-        // video: true は一部ブラウザの要件（音声のみの取得は仕様上videoを含む必要がある）
+        // - video: true は仕様上必須（取得後に映像トラックは停止します）
+        // - selfBrowserSurface: 'exclude' … このタブ自身は共有対象外（自分の出力を拾うハウリング防止）
+        // - suppressLocalAudioPlayback: true … 共有元タブの元の音を止め、ブースト音だけを聞く
         mediaStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: {
-            suppressLocalAudioPlayback: false, // ハウリング抑制
+            suppressLocalAudioPlayback: true,
             echoCancellation: false,
             noiseSuppression: false,
             autoGainControl: false
-          }
+          },
+          selfBrowserSurface: 'exclude',
+          systemAudio: 'exclude',
+          preferCurrentTab: false
         });
 
         const audioTracks = mediaStream.getAudioTracks();
@@ -584,7 +617,10 @@
       } catch (err) {
         console.error('音声キャプチャ開始エラー:', err);
         stopAudioCapture();
-        if (err.name !== 'NotAllowedError') {
+        if (err.name === 'NotAllowedError') {
+          // ダイアログでキャンセルした場合は静かに終了。ダイアログ自体が出ない場合は権限・組織ポリシーの可能性
+          console.warn('画面共有が許可されませんでした（キャンセル、または権限・組織ポリシーによる制限）');
+        } else {
           alert('音声キャプチャの初期化中にエラーが発生しました: ' + err.message);
         }
       }
